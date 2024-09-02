@@ -2,8 +2,7 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
+	"math/rand"
 	"sync"
 )
 
@@ -15,13 +14,13 @@ type PoolConfig struct {
 }
 
 type Pool struct {
-	Config         PoolConfig
-	CurrentWorkers int
-	JobQueue       chan struct{}
-	ResQueue       chan int
-	KillChan       chan os.Signal
-	Wg             sync.WaitGroup
-	IsAlive        bool
+	Config   PoolConfig
+	JobQueue chan struct{}
+	ResQueue chan int
+	Workers  []*Worker
+	KillChan chan struct{}
+	Wg       sync.WaitGroup
+	IsAlive  bool
 }
 
 func defaultConfig() PoolConfig {
@@ -50,28 +49,34 @@ func GetPool(confs ...ConfigFunc) *Pool {
 		cfn(&dconf)
 	}
 
+	var workers []*Worker
+
+	for i := 0; i < dconf.InitWorkers; i++ {
+		workers = append(workers, SpawnWorker())
+	}
+
 	return &Pool{
-		Config:         dconf,
-		CurrentWorkers: 0,
-		JobQueue:       make(chan struct{}),
-		ResQueue:       make(chan int),
-		KillChan:       make(chan os.Signal, 1),
-		IsAlive:        true,
+		Config:   dconf,
+		JobQueue: make(chan struct{}),
+		KillChan: make(chan struct{}),
+		ResQueue: make(chan int),
+		Workers:  workers,
+		IsAlive:  true,
 	}
 }
 
 func (P *Pool) Start() {
-
-	signal.Notify(P.KillChan, os.Interrupt)
-	go P.listen()
+	go listen(P)
 }
 
-func (P *Pool) listen() {
+func listen(P *Pool) {
 	for {
 		select {
 		case <-P.JobQueue:
-			fmt.Println("Job Recieved")
+			Schedule(P)
 		case <-P.KillChan:
+			fmt.Println("Kill Signal Recieved...Waiting for the workers to finish the Job")
+			P.Wg.Wait()
 			fmt.Println("Pool Killed")
 			P.IsAlive = false
 			return
@@ -86,4 +91,28 @@ func (P *Pool) AddJob() {
 		return
 	}
 	P.JobQueue <- struct{}{}
+}
+
+func Schedule(P *Pool) {
+
+	var avail_workers []*Worker
+	for _, worker := range P.Workers {
+		if worker.Available {
+			avail_workers = append(avail_workers, worker)
+		}
+	}
+
+	if len(avail_workers) == 0 {
+		fmt.Println("No workers Available. Cannot Schedule the Job")
+		return
+	}
+
+	rand_index := rand.Intn(len(avail_workers))
+
+	worker := avail_workers[rand_index]
+
+	fmt.Printf("Worker with ID: %s is starting the work\n", worker.ID.String())
+	P.Wg.Add(1)
+	go worker.Do(&P.Wg)
+
 }
