@@ -5,13 +5,17 @@ import (
 )
 
 func main() {
-	pool := GetPool(withInitWorkers(3), withMaxWorkers(3))
+
+	confs := []ConfigFunc{withInitWorkers(3), withMinWorkers(2), withPollPeriod(5), withMaxWorkers(5)}
+
+	pool := GetPool(confs...)
 	pool.Start()
-	for i := 0; i < 4; i++ {
+
+	go pool.PollStatus()
+
+	for i := 0; i < 5; i++ {
 		go pool.AddJob()
-		time.Sleep(1 * time.Second)
 	}
-	pool.KillChan <- struct{}{}
 	time.Sleep(30 * time.Second)
 	for {
 		pool.AddJob()

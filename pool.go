@@ -11,6 +11,7 @@ type ConfigFunc func(*PoolConfig)
 type PoolConfig struct {
 	InitWorkers int
 	MaxWorkers  int
+	MinWorkers  int
 	Poll_Period int
 }
 
@@ -26,7 +27,8 @@ type Pool struct {
 func defaultConfig() PoolConfig {
 	return PoolConfig{
 		InitWorkers: 2,
-		MaxWorkers:  10,
+		MaxWorkers:  4,
+		MinWorkers:  1,
 		Poll_Period: 10,
 	}
 }
@@ -40,6 +42,18 @@ func withMaxWorkers(n int) ConfigFunc {
 func withInitWorkers(n int) ConfigFunc {
 	return func(pc *PoolConfig) {
 		pc.InitWorkers = n
+	}
+}
+
+func withPollPeriod(n int) ConfigFunc {
+	return func(pc *PoolConfig) {
+		pc.Poll_Period = n
+	}
+}
+
+func withMinWorkers(n int) ConfigFunc {
+	return func(pc *PoolConfig) {
+		pc.MinWorkers = n
 	}
 }
 

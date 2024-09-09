@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // check for the incoming job
 func GetAvailableWorkers(P *Pool) ([]*Worker, error) {
@@ -27,6 +30,38 @@ func GetAvailableWorkers(P *Pool) ([]*Worker, error) {
 			return nil, fmt.Errorf("NO_WORKER_ERR")
 		}
 	}
-
 	return avail_workers, nil
+}
+
+// Check at regular intervals
+func (P *Pool) PollStatus() {
+
+	ticker := time.NewTicker(time.Duration(P.Config.Poll_Period) * time.Second)
+
+Outer:
+	for {
+		select {
+		case <-ticker.C:
+			// Case - 1 (Some workers are inactive)
+			for i, worker := range P.Workers {
+				if worker.Available {
+					// Case - 1A (No of workers is equal to Min workers)
+					if len(P.Workers) == P.Config.MinWorkers {
+						// Minimality reached
+						fmt.Println("Current number of Workers is less than MinWorkers")
+						fmt.Println("Taking No action")
+						continue Outer
+					} else if len(P.Workers) > P.Config.MinWorkers {
+						// More workers than needed workers, Scale down the worker
+						fmt.Println("More number of Workers than MinWorkers")
+						fmt.Println("Removing the Worker with id:", worker.ID)
+						P.Workers = append(P.Workers[:i], P.Workers[i+1:]...)
+						continue Outer
+					}
+
+				}
+			}
+		}
+	}
+
 }

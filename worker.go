@@ -28,7 +28,7 @@ func (w *Worker) Do(wg *sync.WaitGroup) {
 
 	for i := 0; i <= 3; i++ {
 		fmt.Printf("Worker with ID: %s Working\n", w.ID.String())
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 
 	w.Available = true
