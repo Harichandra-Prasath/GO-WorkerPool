@@ -14,6 +14,7 @@ type Worker struct {
 }
 
 func SpawnWorker() *Worker {
+	fmt.Println("Spawning a Worker")
 	return &Worker{
 		Available: true,
 		ID:        uuid.New(),

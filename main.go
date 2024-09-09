@@ -5,14 +5,14 @@ import (
 )
 
 func main() {
-	pool := GetPool(withInitWorkers(3), withMaxWorkers(10))
+	pool := GetPool(withInitWorkers(3), withMaxWorkers(3))
 	pool.Start()
-	for i := 0; i < 3; i++ {
-		pool.AddJob()
+	for i := 0; i < 4; i++ {
+		go pool.AddJob()
 		time.Sleep(1 * time.Second)
 	}
 	pool.KillChan <- struct{}{}
-	time.Sleep(20 * time.Second)
+	time.Sleep(30 * time.Second)
 	for {
 		pool.AddJob()
 		time.Sleep(2 * time.Second)

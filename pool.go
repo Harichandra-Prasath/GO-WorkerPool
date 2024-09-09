@@ -11,12 +11,12 @@ type ConfigFunc func(*PoolConfig)
 type PoolConfig struct {
 	InitWorkers int
 	MaxWorkers  int
+	Poll_Period int
 }
 
 type Pool struct {
 	Config   PoolConfig
 	JobQueue chan struct{}
-	ResQueue chan int
 	Workers  []*Worker
 	KillChan chan struct{}
 	Wg       sync.WaitGroup
@@ -27,6 +27,7 @@ func defaultConfig() PoolConfig {
 	return PoolConfig{
 		InitWorkers: 2,
 		MaxWorkers:  10,
+		Poll_Period: 10,
 	}
 }
 
@@ -59,7 +60,6 @@ func GetPool(confs ...ConfigFunc) *Pool {
 		Config:   dconf,
 		JobQueue: make(chan struct{}),
 		KillChan: make(chan struct{}),
-		ResQueue: make(chan int),
 		Workers:  workers,
 		IsAlive:  true,
 	}
@@ -95,23 +95,15 @@ func (P *Pool) AddJob() {
 
 func Schedule(P *Pool) {
 
-	var avail_workers []*Worker
-	for _, worker := range P.Workers {
-		if worker.Available {
-			avail_workers = append(avail_workers, worker)
-		}
-	}
-
-	if len(avail_workers) == 0 {
-		fmt.Println("No workers Available. Cannot Schedule the Job")
+	avail_workers, err := GetAvailableWorkers(P)
+	if err != nil {
+		fmt.Println("Error in getting available Workers:", err)
 		return
 	}
-
 	rand_index := rand.Intn(len(avail_workers))
 
 	worker := avail_workers[rand_index]
 
-	fmt.Printf("Worker with ID: %s is starting the work\n", worker.ID.String())
 	P.Wg.Add(1)
 	go worker.Do(&P.Wg)
 
