@@ -5,6 +5,11 @@ import (
 	"time"
 )
 
+type Poller struct {
+	Ticker *time.Ticker
+	quitCh chan struct{}
+}
+
 // check for the incoming job
 func GetAvailableWorkers(P *Pool) ([]*Worker, error) {
 	var avail_workers []*Worker
@@ -36,12 +41,10 @@ func GetAvailableWorkers(P *Pool) ([]*Worker, error) {
 // Check at regular intervals
 func (P *Pool) PollStatus() {
 
-	ticker := time.NewTicker(time.Duration(P.Config.Poll_Period) * time.Second)
-
 Outer:
 	for {
 		select {
-		case <-ticker.C:
+		case <-P.Poller.Ticker.C:
 			// Case - 1 (Some workers are inactive)
 			for i, worker := range P.Workers {
 				if worker.Available {
@@ -52,6 +55,7 @@ Outer:
 						fmt.Println("Taking No action")
 						continue Outer
 					} else if len(P.Workers) > P.Config.MinWorkers {
+						// Case - 1B
 						// More workers than needed workers, Scale down the worker
 						fmt.Println("More number of Workers than MinWorkers")
 						fmt.Println("Removing the Worker with id:", worker.ID)
@@ -61,6 +65,10 @@ Outer:
 
 				}
 			}
+		case <-P.Poller.quitCh:
+			fmt.Println("Stopping the Poller")
+			// TODO: Maybe Removing the workers from the pool??
+			break Outer
 		}
 	}
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"sync"
+	"time"
 )
 
 type ConfigFunc func(*PoolConfig)
@@ -21,6 +22,7 @@ type Pool struct {
 	Workers  []*Worker
 	KillChan chan struct{}
 	Wg       sync.WaitGroup
+	Poller   *Poller
 	IsAlive  bool
 }
 
@@ -75,7 +77,11 @@ func GetPool(confs ...ConfigFunc) *Pool {
 		JobQueue: make(chan struct{}),
 		KillChan: make(chan struct{}),
 		Workers:  workers,
-		IsAlive:  true,
+		Poller: &Poller{
+			Ticker: time.NewTicker(time.Duration(dconf.Poll_Period) * time.Second),
+			quitCh: make(chan struct{}),
+		},
+		IsAlive: true,
 	}
 }
 
@@ -90,6 +96,7 @@ func listen(P *Pool) {
 			Schedule(P)
 		case <-P.KillChan:
 			fmt.Println("Kill Signal Recieved...Waiting for the workers to finish the Job")
+			P.Poller.quitCh <- struct{}{}
 			P.Wg.Wait()
 			fmt.Println("Pool Killed")
 			P.IsAlive = false
@@ -97,6 +104,10 @@ func listen(P *Pool) {
 		}
 
 	}
+}
+
+func (P *Pool) Kill() {
+	P.KillChan <- struct{}{}
 }
 
 func (P *Pool) AddJob() {
