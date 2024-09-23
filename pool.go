@@ -18,7 +18,7 @@ type PoolConfig struct {
 
 type Pool struct {
 	Config   PoolConfig
-	JobQueue chan struct{}
+	JobQueue chan *Job
 	Workers  []*Worker
 	KillChan chan struct{}
 	Wg       sync.WaitGroup
@@ -74,7 +74,7 @@ func GetPool(confs ...ConfigFunc) *Pool {
 
 	return &Pool{
 		Config:   dconf,
-		JobQueue: make(chan struct{}),
+		JobQueue: make(chan *Job),
 		KillChan: make(chan struct{}),
 		Workers:  workers,
 		Poller: &Poller{
@@ -92,8 +92,8 @@ func (P *Pool) Start() {
 func listen(P *Pool) {
 	for {
 		select {
-		case <-P.JobQueue:
-			Schedule(P)
+		case job := <-P.JobQueue:
+			Schedule(P, job)
 		case <-P.KillChan:
 			fmt.Println("Kill Signal Recieved...Waiting for the workers to finish the Job")
 			P.Poller.quitCh <- struct{}{}
@@ -110,15 +110,15 @@ func (P *Pool) Kill() {
 	P.KillChan <- struct{}{}
 }
 
-func (P *Pool) AddJob() {
+func (P *Pool) AddJob(J *Job) {
 	if !P.IsAlive {
 		fmt.Println("Pool is not alive. Cannot add a Job")
 		return
 	}
-	P.JobQueue <- struct{}{}
+	P.JobQueue <- J
 }
 
-func Schedule(P *Pool) {
+func Schedule(P *Pool, j *Job) {
 
 	avail_workers, err := GetAvailableWorkers(P)
 	if err != nil {
@@ -128,8 +128,10 @@ func Schedule(P *Pool) {
 	rand_index := rand.Intn(len(avail_workers))
 
 	worker := avail_workers[rand_index]
+	fmt.Println("Choosen Worker:", worker.ID, " for the Job", j.ID)
+	worker.Available = false
 
 	P.Wg.Add(1)
-	go worker.Do(&P.Wg)
+	go worker.Do(&P.Wg, j)
 
 }

@@ -13,6 +13,11 @@ type Worker struct {
 	ID        uuid.UUID
 }
 
+type Job struct {
+	ID       uuid.UUID
+	WorkTime int
+}
+
 func SpawnWorker() *Worker {
 	fmt.Println("Spawning a Worker")
 	return &Worker{
@@ -21,15 +26,13 @@ func SpawnWorker() *Worker {
 	}
 }
 
-func (w *Worker) Do(wg *sync.WaitGroup) {
+func (w *Worker) Do(wg *sync.WaitGroup, j *Job) {
 	defer wg.Done()
 
-	w.Available = false
+	fmt.Printf("Worker with ID: %s executing the Job with ID: %s\n", w.ID, j.ID)
 
-	for i := 0; i <= 3; i++ {
-		fmt.Printf("Worker with ID: %s Working\n", w.ID.String())
-		time.Sleep(1 * time.Second)
-	}
+	// Mimic Work time
+	time.Sleep(time.Duration(j.WorkTime) * time.Second)
 
-	w.Available = true
+	fmt.Printf("Worker with ID: %s Finished the Job with ID: %s\n", w.ID, j.ID)
 }

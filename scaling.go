@@ -40,7 +40,7 @@ func GetAvailableWorkers(P *Pool) ([]*Worker, error) {
 
 // Check at regular intervals
 func (P *Pool) PollStatus() {
-
+	scaling := false
 Outer:
 	for {
 		select {
@@ -48,6 +48,7 @@ Outer:
 			// Case - 1 (Some workers are inactive)
 			for i, worker := range P.Workers {
 				if worker.Available {
+					scaling = true
 					// Case - 1A (No of workers is equal to Min workers)
 					if len(P.Workers) == P.Config.MinWorkers {
 						// Minimality reached
@@ -64,6 +65,9 @@ Outer:
 					}
 
 				}
+			}
+			if !scaling {
+				fmt.Println("No Action Needed")
 			}
 		case <-P.Poller.quitCh:
 			fmt.Println("Stopping the Poller")

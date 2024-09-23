@@ -2,6 +2,8 @@ package main
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func main() {
@@ -14,11 +16,11 @@ func main() {
 	go pool.PollStatus()
 
 	for i := 0; i < 5; i++ {
-		go pool.AddJob()
+		pool.AddJob(&Job{
+			ID:       uuid.New(),
+			WorkTime: 30,
+		})
 	}
-	time.Sleep(30 * time.Second)
-	for {
-		pool.AddJob()
-		time.Sleep(2 * time.Second)
-	}
+
+	time.Sleep(100 * time.Second)
 }
