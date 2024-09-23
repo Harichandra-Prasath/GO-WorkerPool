@@ -68,10 +68,6 @@ func GetPool(confs ...ConfigFunc) *Pool {
 
 	var workers []*Worker
 
-	for i := 0; i < dconf.InitWorkers; i++ {
-		workers = append(workers, SpawnWorker())
-	}
-
 	return &Pool{
 		Config:   dconf,
 		JobQueue: make(chan *Job),
@@ -86,6 +82,13 @@ func GetPool(confs ...ConfigFunc) *Pool {
 }
 
 func (P *Pool) Start() {
+
+	fmt.Println("Spawning the Initial Workers")
+
+	for i := 0; i < P.Config.InitWorkers; i++ {
+		P.Workers = append(P.Workers, SpawnWorker())
+	}
+
 	go listen(P)
 }
 

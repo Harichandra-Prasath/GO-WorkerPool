@@ -19,10 +19,13 @@ type Job struct {
 }
 
 func SpawnWorker() *Worker {
-	fmt.Println("Spawning a Worker")
+
+	id := uuid.New()
+	fmt.Println("Worker Spawned with ID:", id)
+
 	return &Worker{
 		Available: true,
-		ID:        uuid.New(),
+		ID:        id,
 	}
 }
 

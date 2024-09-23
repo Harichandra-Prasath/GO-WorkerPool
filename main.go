@@ -1,26 +1,19 @@
 package main
 
-import (
-	"time"
-
-	"github.com/google/uuid"
-)
-
 func main() {
 
 	confs := []ConfigFunc{withInitWorkers(3), withMinWorkers(2), withPollPeriod(5), withMaxWorkers(5)}
 
 	pool := GetPool(confs...)
-	pool.Start()
 
-	go pool.PollStatus()
+	server := GetNewServer(&ServerConfig{
+		Addr: ":3000",
+	})
 
-	for i := 0; i < 5; i++ {
-		pool.AddJob(&Job{
-			ID:       uuid.New(),
-			WorkTime: 30,
-		})
+	server.Pool = pool
+
+	if err := server.Serve(); err != nil {
+		panic(err)
 	}
 
-	time.Sleep(100 * time.Second)
 }
