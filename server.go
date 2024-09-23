@@ -24,7 +24,9 @@ func GetNewServer(cfg *ServerConfig) *Server {
 
 func (S *Server) Serve() error {
 
-	fmt.Printf("Server Started on localhost:%s\n", S.Config.Addr)
+	S.ConfigureRoutes()
+
+	fmt.Printf("Server Started on localhost%s\n", S.Config.Addr)
 	err := http.ListenAndServe(S.Config.Addr, S.Mux)
 	if err != nil {
 		return err

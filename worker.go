@@ -15,7 +15,7 @@ type Worker struct {
 
 type Job struct {
 	ID       uuid.UUID
-	WorkTime int
+	WorkTime int `json:"work_time"`
 }
 
 func SpawnWorker() *Worker {
