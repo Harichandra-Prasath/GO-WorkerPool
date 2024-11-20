@@ -24,6 +24,7 @@ func Compare() http.HandlerFunc {
 			return
 		}
 
+		Bench()
 	}
 }
 

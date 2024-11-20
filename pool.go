@@ -13,6 +13,7 @@ type PoolConfig struct {
 	MaxWorkers  int
 	MinWorkers  int
 	Poll_Period int
+	Scaling     bool
 }
 
 type Pool struct {
@@ -32,6 +33,7 @@ func defaultConfig() PoolConfig {
 		MaxWorkers:  4,
 		MinWorkers:  1,
 		Poll_Period: 10,
+		Scaling:     false,
 	}
 }
 
@@ -59,6 +61,12 @@ func withMinWorkers(n int) ConfigFunc {
 	}
 }
 
+func withScaling() ConfigFunc {
+	return func(pc *PoolConfig) {
+		pc.Scaling = true
+	}
+}
+
 func GetPool(confs ...ConfigFunc) *Pool {
 	dconf := defaultConfig()
 
@@ -66,11 +74,11 @@ func GetPool(confs ...ConfigFunc) *Pool {
 		cfn(&dconf)
 	}
 
-	workers := make(chan *Worker, dconf.InitWorkers)
+	workers := make(chan *Worker, dconf.MaxWorkers)
 
 	return &Pool{
 		Config:   dconf,
-		JobQueue: make(chan *Job, 1),
+		JobQueue: make(chan *Job, dconf.MaxWorkers),
 		KillChan: make(chan struct{}),
 		Workers:  workers,
 		Current:  0,

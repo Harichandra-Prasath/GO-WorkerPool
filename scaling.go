@@ -13,19 +13,21 @@ type Poller struct {
 // check for the incoming job
 func GetAvailableWorker(P *Pool) *Worker {
 
-	if len(P.Workers) == 0 {
-		fmt.Println("No workers Available")
-		fmt.Println("Trying to Scale Up")
+	if P.Config.Scaling {
+		if len(P.Workers) == 0 {
+			fmt.Println("No workers Available")
+			fmt.Println("Trying to Scale Up")
 
-		// Scale Up to MaxWorkers
-		if P.Current < P.Config.MaxWorkers {
-			fmt.Println("Current number of workers is less than Max workers")
-			w := SpawnWorker()
-			go w.Start(&P.Wg, P.Workers)
-			P.Current += 1
-			P.Workers <- w
-		} else {
-			fmt.Println("Max Workers Limit reached.. Cannot Scale Up")
+			// Scale Up to MaxWorkers
+			if P.Current < P.Config.MaxWorkers {
+				fmt.Println("Current number of workers is less than Max workers")
+				w := SpawnWorker()
+				go w.Start(&P.Wg, P.Workers)
+				P.Current += 1
+				P.Workers <- w
+			} else {
+				fmt.Println("Max Workers Limit reached.. Cannot Scale Up")
+			}
 		}
 	}
 

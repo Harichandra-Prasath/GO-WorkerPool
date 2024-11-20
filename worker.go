@@ -37,12 +37,8 @@ outer:
 		select {
 		case j := <-w.JobChan:
 			fmt.Printf("Worker with ID: %s executing the Job with ID: %s\n", w.ID, j.ID)
-
-			// Mimic Work time
-			time.Sleep(time.Duration(j.WorkTime) * time.Second)
-
+			Execute(j)
 			fmt.Printf("Worker with ID: %s Finished the Job with ID: %s\n", w.ID, j.ID)
-
 			wg.Done()
 
 			workers <- w
@@ -52,4 +48,11 @@ outer:
 			break outer
 		}
 	}
+}
+
+func Execute(j *Job) {
+
+	// Mimic Work time
+	time.Sleep(time.Duration(j.WorkTime) * time.Millisecond)
+
 }
