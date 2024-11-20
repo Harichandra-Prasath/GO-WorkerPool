@@ -10,8 +10,6 @@ type Poller struct {
 	quitCh chan struct{}
 }
 
-var NO_WORKER_ERR error
-
 // check for the incoming job
 func GetAvailableWorker(P *Pool) *Worker {
 
@@ -20,9 +18,11 @@ func GetAvailableWorker(P *Pool) *Worker {
 		fmt.Println("Trying to Scale Up")
 
 		// Scale Up to MaxWorkers
-		if len(P.Workers) < P.Config.MaxWorkers {
+		if P.Current < P.Config.MaxWorkers {
 			fmt.Println("Current number of workers is less than Max workers")
 			w := SpawnWorker()
+			go w.Start(&P.Wg, P.Workers)
+			P.Current += 1
 			P.Workers <- w
 		} else {
 			fmt.Println("Max Workers Limit reached.. Cannot Scale Up")
@@ -50,6 +50,8 @@ Outer:
 				fmt.Println("More number of Workers than MinWorkers")
 				worker := <-P.Workers
 				fmt.Println("Removing the Worker with id:", worker.ID)
+				worker.KillChan <- struct{}{}
+				P.Current -= 1
 				continue Outer
 			}
 

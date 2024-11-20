@@ -55,7 +55,7 @@ func AddJob(S *Server) http.HandlerFunc {
 			return
 		}
 
-		S.Pool.AddJob(&j)
+		go S.Pool.AddJob(&j)
 
 	}
 }

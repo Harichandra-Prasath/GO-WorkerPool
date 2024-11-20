@@ -19,6 +19,7 @@ type Pool struct {
 	Config   PoolConfig
 	JobQueue chan *Job
 	Workers  chan *Worker
+	Current  int
 	KillChan chan struct{}
 	Wg       sync.WaitGroup
 	Poller   *Poller
@@ -69,9 +70,10 @@ func GetPool(confs ...ConfigFunc) *Pool {
 
 	return &Pool{
 		Config:   dconf,
-		JobQueue: make(chan *Job),
+		JobQueue: make(chan *Job, 1),
 		KillChan: make(chan struct{}),
 		Workers:  workers,
+		Current:  0,
 		Poller: &Poller{
 			Ticker: time.NewTicker(time.Duration(dconf.Poll_Period) * time.Second),
 			quitCh: make(chan struct{}),
@@ -85,7 +87,10 @@ func (P *Pool) Start() {
 	fmt.Println("Spawning the Initial Workers")
 
 	for i := 0; i < P.Config.InitWorkers; i++ {
-		P.Workers <- SpawnWorker()
+		w := SpawnWorker()
+		P.Workers <- w
+		go w.Start(&P.Wg, P.Workers)
+		P.Current += 1
 	}
 
 	go listen(P)
@@ -126,8 +131,6 @@ func Schedule(P *Pool, j *Job) {
 	worker := GetAvailableWorker(P)
 
 	fmt.Println("Choosen Worker:", worker.ID, " for the Job", j.ID)
-
+	worker.JobChan <- j
 	P.Wg.Add(1)
-	go worker.Do(&P.Wg, j, P.Workers)
-
 }
