@@ -2,7 +2,7 @@ package main
 
 func main() {
 
-	confs := []ConfigFunc{withInitWorkers(3), withMinWorkers(2), withPollPeriod(5), withMaxWorkers(5)}
+	confs := []ConfigFunc{withInitWorkers(3), withMinWorkers(2), withPollPeriod(10), withMaxWorkers(5)}
 
 	pool := GetPool(confs...)
 

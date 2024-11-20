@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
 	"sync"
 	"time"
 )
@@ -19,7 +18,7 @@ type PoolConfig struct {
 type Pool struct {
 	Config   PoolConfig
 	JobQueue chan *Job
-	Workers  []*Worker
+	Workers  chan *Worker
 	KillChan chan struct{}
 	Wg       sync.WaitGroup
 	Poller   *Poller
@@ -40,8 +39,8 @@ func withMaxWorkers(n int) ConfigFunc {
 		pc.MaxWorkers = n
 	}
 }
-
 func withInitWorkers(n int) ConfigFunc {
+
 	return func(pc *PoolConfig) {
 		pc.InitWorkers = n
 	}
@@ -66,7 +65,7 @@ func GetPool(confs ...ConfigFunc) *Pool {
 		cfn(&dconf)
 	}
 
-	var workers []*Worker
+	workers := make(chan *Worker, dconf.InitWorkers)
 
 	return &Pool{
 		Config:   dconf,
@@ -86,10 +85,11 @@ func (P *Pool) Start() {
 	fmt.Println("Spawning the Initial Workers")
 
 	for i := 0; i < P.Config.InitWorkers; i++ {
-		P.Workers = append(P.Workers, SpawnWorker())
+		P.Workers <- SpawnWorker()
 	}
 
 	go listen(P)
+	go P.PollStatus()
 }
 
 func listen(P *Pool) {
@@ -123,18 +123,11 @@ func (P *Pool) AddJob(J *Job) {
 
 func Schedule(P *Pool, j *Job) {
 
-	avail_workers, err := GetAvailableWorkers(P)
-	if err != nil {
-		fmt.Println("Error in getting available Workers:", err)
-		return
-	}
-	rand_index := rand.Intn(len(avail_workers))
+	worker := GetAvailableWorker(P)
 
-	worker := avail_workers[rand_index]
 	fmt.Println("Choosen Worker:", worker.ID, " for the Job", j.ID)
-	worker.Available = false
 
 	P.Wg.Add(1)
-	go worker.Do(&P.Wg, j)
+	go worker.Do(&P.Wg, j, P.Workers)
 
 }

@@ -12,6 +12,19 @@ import (
 func (S *Server) ConfigureRoutes() {
 	S.Mux.Handle("/start_pool", StartPool(S))
 	S.Mux.Handle("/add_job", AddJob(S))
+	S.Mux.Handle("/compare", Compare())
+}
+
+func Compare() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		if r.Method != http.MethodGet {
+			w.WriteHeader(400)
+			w.Write([]byte("Only GET Method is allowed\n"))
+			return
+		}
+
+	}
 }
 
 func AddJob(S *Server) http.HandlerFunc {

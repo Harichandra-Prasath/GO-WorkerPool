@@ -9,8 +9,7 @@ import (
 )
 
 type Worker struct {
-	Available bool
-	ID        uuid.UUID
+	ID uuid.UUID
 }
 
 type Job struct {
@@ -24,12 +23,11 @@ func SpawnWorker() *Worker {
 	fmt.Println("Worker Spawned with ID:", id)
 
 	return &Worker{
-		Available: true,
-		ID:        id,
+		ID: id,
 	}
 }
 
-func (w *Worker) Do(wg *sync.WaitGroup, j *Job) {
+func (w *Worker) Do(wg *sync.WaitGroup, j *Job, workers chan *Worker) {
 	defer wg.Done()
 
 	fmt.Printf("Worker with ID: %s executing the Job with ID: %s\n", w.ID, j.ID)
@@ -38,4 +36,7 @@ func (w *Worker) Do(wg *sync.WaitGroup, j *Job) {
 	time.Sleep(time.Duration(j.WorkTime) * time.Second)
 
 	fmt.Printf("Worker with ID: %s Finished the Job with ID: %s\n", w.ID, j.ID)
+
+	// Add back to the workers
+	workers <- w
 }
