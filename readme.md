@@ -10,6 +10,11 @@ This is a WorkerPool Implementation in golang with Auto Scaling.
 4. Workers run concurrently and Isolated.   
 5. For a incoming job, random available worker will be chosen.   
 
+## Scaling Up  
+![image](https://github.com/user-attachments/assets/65049bec-0d7c-4b86-b2d8-d627164d9a31)
+
+
+
 ## Results   
  
 | N_JOBS | JOB_TIME | N_GOROUTINES | N/2_WORKERS | 
