@@ -13,6 +13,8 @@ This is a WorkerPool Implementation in golang with Auto Scaling.
 ## Scaling Up  
 ![image](https://github.com/user-attachments/assets/65049bec-0d7c-4b86-b2d8-d627164d9a31)
 
+## Scaling Down  
+![image](https://github.com/user-attachments/assets/8b80a276-46aa-4de0-a72f-5337d6374f90)
 
 
 ## Results   
